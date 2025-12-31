@@ -494,30 +494,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (allWaktuKerja0000_0800 && has0700_1600 && has1500_0000) {
                     // Special 24-hour continuous case: 0000-0800 (waktu kerja) + 0700-1600 + 1500-0000
+                    // Claim hours start at 0800 (after regular work ends), so 9th hour is calculated from 0800
                     // Overlaps:
                     // - 0000-0800 and 0700-1600 overlap from 0700-0800 (1 hour, day shift)
                     // - 0700-1600 and 1500-0000 overlap from 1500-1600 (1 hour, day shift)
-                    // First 9th hour: 0800-0900 (from start of 0000-0800) - affects 0700-1600 row
-                    // Second 9th hour: 1700-1800 (from start of continuous period at 0000) - affects 1500-0000 row
+                    // First row (0700-1600): Claim period is 0800-1600 (8 hours), so no 9th hour deduction
+                    // Second row (1500-0000): 9th hour from 0800 is 1600-1700, but claim is 1500-0000, so 9th hour is 2300-0000 (night)
                     dateRows.forEach((data) => {
                         let finalDay = data.initialDayHours;
                         let finalNight = data.initialNightHours;
 
                         if (data.waktuLembur === "0700-1600") {
                             // Overlap with 0000-0800: 0700-0800 (1 hour day) - deduct from day
+                            // 0800-0900 is 1st hour of claim (not 9th), so no 9th hour deduction
+                            // Claim period is 0800-1600 (8 hours), so no 9th hour
                             if (finalDay > 0) {
                                 finalDay--;
                             }
-                            // First 9th hour (0800-0900) is in day shift, deduct from day
-                            if (finalDay > 0) {
-                                finalDay--;
-                            }
+                            // No 9th hour deduction because claim is only 8 hours (0800-1600)
                         } else if (data.waktuLembur === "1500-0000") {
                             // Overlap with 0700-1600: 1500-1600 (1 hour day) - deduct from day
                             if (finalDay > 0) {
                                 finalDay--;
                             }
-                            // Second 9th hour (1700-1800) is in day shift, deduct from day
+                            // 9th hour from claim start (0800) is 1600-1700, which is in the 1500-0000 period
+                            // 1600-1700 is day shift (0600-2200 is day), so deduct from day rate
                             if (finalDay > 0) {
                                 finalDay--;
                             }
