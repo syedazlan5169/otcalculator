@@ -8,6 +8,7 @@ export default defineConfig({
                 "resources/css/app.css",
                 "resources/js/app.js",
                 "resources/js/ot-calculator.js",
+                "resources/js/ot-calculator2.js",
             ],
             refresh: true,
         }),
