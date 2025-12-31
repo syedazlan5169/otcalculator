@@ -28,6 +28,7 @@
                                     <li>2200 - 0600 = night rate</li>
                                     <li>0600 - 2200 = day rate</li>
                                     <li>9th hour auto-deduct</li>
+                                    <li>overlapped hour auto-deduct</li>
                                 </ul>
                             </div>
                         </div>

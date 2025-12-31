@@ -413,6 +413,28 @@ document.addEventListener("DOMContentLoaded", function () {
             data.initialNightHours = result.nightHours;
             data.dayRate = result.dayRate;
             data.nightRate = result.nightRate;
+
+            // Handle overlap case 1: waktu kerja 0000-0800 and waktu lembur 0700-1600
+            // Overlap: 0700-0800 (1 hour, day shift) - deduct this first
+            // 9th hour: 0800-0900 (1 hour, day shift) - will be deducted by apply9thHourDeduction
+            // Total deduction: 2 hours from day rate (9 - 1 - 1 = 7)
+            if (
+                data.waktuKerja === "0000-0800" &&
+                data.waktuLembur === "0700-1600"
+            ) {
+                // Deduct 1 hour for overlap (0700-0800)
+                if (data.initialDayHours > 0) {
+                    data.initialDayHours--;
+                }
+                // The 9th hour deduction (0800-0900) will be handled by apply9thHourDeduction later
+            }
+
+            // Handle overlap case 2: waktu kerja 0700-1600 and waktu lembur 1500-0000
+            // Overlap: 1500-1600 (1 hour, day shift)
+            // 9th hour: 1500-1600 (1 hour, day shift) - same as overlap hour!
+            // Since overlap and 9th hour are the same, apply9thHourDeduction will handle the deduction
+            // Total deduction: 1 hour from day rate (7 - 1 = 6 day, 2 night)
+            // No need to deduct overlap separately since it's the same as 9th hour
         });
 
         // Process continuous overtime for same dates
@@ -741,11 +763,25 @@ document.addEventListener("DOMContentLoaded", function () {
         if (waktuLemburHours[data.waktuLembur] === 9) {
             // Need to deduct 9th hour
             if (data.waktuLembur === "0700-1600") {
-                // 9th hour is 15:00-16:00 (day shift)
-                if (finalDay > 0) finalDay--;
+                // Special case: if waktu kerja is 0000-0800, 9th hour is 0800-0900 (from start of 0000-0800)
+                // Otherwise, 9th hour is 15:00-16:00 (from start of 0700-1600)
+                if (data.waktuKerja === "0000-0800") {
+                    // 9th hour is 0800-0900 (day shift) - already deducted overlap, now deduct 9th hour
+                    if (finalDay > 0) finalDay--;
+                } else {
+                    // 9th hour is 15:00-16:00 (day shift)
+                    if (finalDay > 0) finalDay--;
+                }
             } else if (data.waktuLembur === "1500-0000") {
-                // 9th hour is 23:00-00:00 (night shift)
-                if (finalNight > 0) finalNight--;
+                // Special case: if waktu kerja is 0700-1600, 9th hour is 1500-1600 (from start of 0700-1600)
+                // Otherwise, 9th hour is 23:00-00:00 (from start of 1500-0000)
+                if (data.waktuKerja === "0700-1600") {
+                    // 9th hour is 1500-1600 (day shift) - this is also the overlap hour, deduct once
+                    if (finalDay > 0) finalDay--;
+                } else {
+                    // 9th hour is 23:00-00:00 (night shift)
+                    if (finalNight > 0) finalNight--;
+                }
             }
         }
 
