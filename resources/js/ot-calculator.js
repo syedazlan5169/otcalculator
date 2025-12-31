@@ -435,6 +435,20 @@ document.addEventListener("DOMContentLoaded", function () {
             // Since overlap and 9th hour are the same, apply9thHourDeduction will handle the deduction
             // Total deduction: 1 hour from day rate (7 - 1 = 6 day, 2 night)
             // No need to deduct overlap separately since it's the same as 9th hour
+
+            // Handle overlap case 3: waktu kerja 0700-1600 and waktu lembur 0000-0800
+            // Overlap: 0700-0800 (1 hour, day shift) - deduct this
+            // Since work starts at 0700, overtime should stop at 0700 instead of 0800
+            // Total deduction: 1 hour from day rate (2 - 1 = 1 day, 6 night)
+            if (
+                data.waktuKerja === "0700-1600" &&
+                data.waktuLembur === "0000-0800"
+            ) {
+                // Deduct 1 hour for overlap (0700-0800)
+                if (data.initialDayHours > 0) {
+                    data.initialDayHours--;
+                }
+            }
         });
 
         // Process continuous overtime for same dates
