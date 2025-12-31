@@ -506,11 +506,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         if (data.waktuLembur === "0700-1600") {
                             // Overlap with 0000-0800: 0700-0800 (1 hour day) - deduct from day
+                            // But check if overlap was already deducted in initial logic
+                            // If initialDayHours is 8, overlap was already deducted, so use 8
+                            // If initialDayHours is 9, deduct 1 for overlap to get 8
                             // 0800-0900 is 1st hour of claim (not 9th), so no 9th hour deduction
                             // Claim period is 0800-1600 (8 hours), so no 9th hour
-                            if (finalDay > 0) {
-                                finalDay--;
+                            if (data.initialDayHours === 9) {
+                                // Overlap not yet deducted, deduct it now
+                                if (finalDay > 0) {
+                                    finalDay--;
+                                }
                             }
+                            // If initialDayHours is already 8, use it as is (overlap already deducted)
                             // No 9th hour deduction because claim is only 8 hours (0800-1600)
                         } else if (data.waktuLembur === "1500-0000") {
                             // Overlap with 0700-1600: 1500-1600 (1 hour day) - deduct from day
