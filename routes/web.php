@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'otcalculator');
+Route::view('/', 'otcalculator2');
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
