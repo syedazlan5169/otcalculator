@@ -19,17 +19,22 @@
                 <main>
                     <div class="flex flex-col items-center">
                         <!-- Header Section -->
-                        <div class="text-center mb-12">
-                            <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-slate-500 to-blue-400 bg-clip-text text-transparent mb-4 tracking-tight">
-                                OT Calculator
-                            </h1>
-                            <div class="mt-6 space-y-2">
-                                <ul class="list-disc list-inside text-gray-700 text-sm md:text-base space-y-1 inline-block text-left">
-                                    <li>2200 - 0600 = night rate</li>
-                                    <li>0600 - 2200 = day rate</li>
-                                    <li>9th hour auto-deduct</li>
-                                    <li>overlapped hour auto-deduct</li>
-                                </ul>
+                        <div class="relative w-full mb-12">
+                            <div class="text-center">
+                                <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-slate-500 to-blue-400 bg-clip-text text-transparent mb-4 tracking-tight">
+                                    OT Calculator
+                                </h1>
+                                <div class="mt-6 space-y-2">
+                                    <ul class="list-disc list-inside text-gray-700 text-sm md:text-base space-y-1 inline-block text-left">
+                                        <li>2200 - 0600 = night rate</li>
+                                        <li>0600 - 2200 = day rate</li>
+                                        <li>9th hour auto-deduct</li>
+                                        <li>overlapped hour auto-deduct</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="absolute top-0 right-0 w-1/4 flex items-center justify-center">
+                                <img src="{{ asset('images/approved_by_mekna.png') }}" alt="Approved by Mekna" class="w-full h-auto max-w-xs object-contain">
                             </div>
                         </div>
                         
