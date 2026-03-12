@@ -88,7 +88,8 @@
                                             <tr class="bg-gradient-to-r from-slate-400 to-blue-400">
                                                 <th class="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Tarikh</th>
                                                 <th class="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider min-w-[140px]">Waktu Kerja</th>
-                                                <th class="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider min-w-[140px]">Waktu Lembur</th>
+                                                <th class="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider min-w-[140px]">Waktu Lembur (In)</th>
+                                                <th class="px-3 py-3 text-left text-xs font-bold text-white uppercase tracking-wider min-w-[140px]">Waktu Lembur (Out)</th>
                                                 <th class="px-3 py-3 text-center text-xs font-bold text-white uppercase tracking-wider">Jumlah Jam Lembur</th>
                                                 <th class="px-2 py-3 text-center text-xs font-bold text-white uppercase tracking-wider">1.125</th>
                                                 <th class="px-2 py-3 text-center text-xs font-bold text-white uppercase tracking-wider">1.25</th>
@@ -103,7 +104,7 @@
                                         </tbody>
                                         <tfoot>
                                             <tr class="bg-gradient-to-r from-slate-100 to-blue-100 border-t-4 border-slate-300">
-                                                <td colspan="3" class="px-3 py-3 text-sm font-bold text-slate-700">JUMLAH</td>
+                                                <td colspan="4" class="px-3 py-3 text-sm font-bold text-slate-700">JUMLAH</td>
                                                 <td id="total-jumlah-jam" class="px-3 py-3 text-sm font-bold text-slate-700 text-center">0</td>
                                                 <td class="px-2 py-3 text-sm font-bold text-slate-700 text-center">
                                                     <div class="flex flex-col">

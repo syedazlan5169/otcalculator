@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 const diff = newValue.length - oldValue.length;
                 const newCursorPosition = Math.max(
                     0,
-                    Math.min(cursorPosition + diff, newValue.length)
+                    Math.min(cursorPosition + diff, newValue.length),
                 );
                 this.setSelectionRange(newCursorPosition, newCursorPosition);
             }
@@ -78,13 +78,42 @@ document.addEventListener("DOMContentLoaded", function () {
     // Get table body reference
     const tableBody = document.getElementById("ot-table-body");
 
+    // Prevent time controls (custom selects) from looping when using scroll/arrow keys
+    function attachNonLoopingTimeControl(control) {
+        if (!control) return;
+
+        // Block mouse wheel from changing value
+        control.addEventListener(
+            "wheel",
+            function (e) {
+                e.preventDefault();
+            },
+            { passive: false },
+        );
+
+        // Clamp arrow key changes so they don't wrap around from last to first
+        control.addEventListener("keydown", function (e) {
+            if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+            if (this.tagName !== "SELECT") return;
+
+            const maxIndex = this.options.length - 1;
+            const idx = this.selectedIndex;
+
+            if (e.key === "ArrowUp" && idx <= 0) {
+                e.preventDefault();
+            } else if (e.key === "ArrowDown" && idx >= maxIndex) {
+                e.preventDefault();
+            }
+        });
+    }
+
     // Function to calculate and update totals
     function calculateTotals() {
         // Calculate total for Jumlah Jam Lembur column (index 3)
         let totalJumlahJam = 0;
         const rows = tableBody.querySelectorAll("tr");
         rows.forEach(function (row) {
-            const input = row.querySelectorAll("td")[3]?.querySelector("input");
+            const input = row.querySelectorAll("td")[4]?.querySelector("input");
             if (input && input.value) {
                 const hours = parseInt(input.value) || 0;
                 totalJumlahJam += hours;
@@ -98,7 +127,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Calculate totals for multiplier columns
         const multipliers = [1.125, 1.25, 1.5, 1.75, 2.0];
         const multiplierIds = ["1.125", "1.25", "1.5", "1.75", "2.0"];
-        const multiplierIndices = [4, 5, 6, 7, 8]; // Column indices for multiplier columns (0-based)
+        const multiplierIndices = [5, 6, 7, 8, 9]; // Column indices for multiplier columns (0-based)
 
         multipliers.forEach(function (multiplier, index) {
             const colIndex = multiplierIndices[index];
@@ -118,7 +147,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Update total hours display (first line)
             const totalHoursElement = document.getElementById(
-                `total-hours-${multiplierId}`
+                `total-hours-${multiplierId}`,
             );
             if (totalHoursElement) {
                 totalHoursElement.textContent = totalHours;
@@ -127,7 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
             // Multiply by multiplier and update display (second line)
             const total = totalHours * multiplier;
             const totalElement = document.getElementById(
-                `total-${multiplierId}`
+                `total-${multiplierId}`,
             );
             if (totalElement) {
                 totalElement.textContent = total.toFixed(2);
@@ -162,7 +191,7 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("jumlah-tuntutan");
         if (jumlahTuntutanElement) {
             jumlahTuntutanElement.textContent = formatNumberWithCommas(
-                grandTotal.toFixed(2)
+                grandTotal.toFixed(2),
             );
         }
     }
@@ -181,25 +210,74 @@ document.addEventListener("DOMContentLoaded", function () {
             <td class="px-3 py-3 whitespace-nowrap min-w-[140px]">
                 <select class="waktu-kerja-select w-full min-w-[140px] px-2 py-2 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all bg-white text-gray-900">
                     <option value=""> </option>
-                    <option value="0000-0800">0000 - 0800</option>
-                    <option value="0700-1600">0700 - 1600</option>
-                    <option value="1500-0000">1500 - 0000</option>
+                    <option value="2200-0700">2200 - 0700</option>
+                    <option value="0700-1500">0700 - 1500</option>
+                    <option value="1400-2300">1400 - 2300</option>
                     <option value="KELEPASAN_GILIRAN">KEL. GILIRAN</option>
                     <option value="KELEPASAN_AM">KEL. AM</option>
                     <option value="KELEPASAN_AM_GANTIAN">KEL. AM GANTIAN</option>
                 </select>
             </td>
             <td class="px-3 py-3 whitespace-nowrap min-w-[140px]">
-                <select class="waktu-lembur-select w-full min-w-[140px] px-2 py-2 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all bg-white text-gray-900">
+                <select
+                    class="waktu-lembur-in-select w-full min-w-[140px] px-2 py-2 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all bg-white text-gray-900"
+                >
                     <option value=""> </option>
-                    <option value="0000-0800">0000 - 0800</option>
-                    <option value="0700-1600">0700 - 1600</option>
-                    <option value="1500-0000">1500 - 0000</option>
-                    <option value="0800-1600">0800 - 1600</option>
-                    <option value="1600-0000">1600 - 0000</option>
-                    <option value="0000-0700">0000 - 0700</option>
-                    <option value="0700-1500">0700 - 1500</option>
-                    <option value="0800-1500">0800 - 1500</option>
+                    <option value="00:00">00:00</option>
+                    <option value="01:00">01:00</option>
+                    <option value="02:00">02:00</option>
+                    <option value="03:00">03:00</option>
+                    <option value="04:00">04:00</option>
+                    <option value="05:00">05:00</option>
+                    <option value="06:00">06:00</option>
+                    <option value="07:00">07:00</option>
+                    <option value="08:00">08:00</option>
+                    <option value="09:00">09:00</option>
+                    <option value="10:00">10:00</option>
+                    <option value="11:00">11:00</option>
+                    <option value="12:00">12:00</option>
+                    <option value="13:00">13:00</option>
+                    <option value="14:00">14:00</option>
+                    <option value="15:00">15:00</option>
+                    <option value="16:00">16:00</option>
+                    <option value="17:00">17:00</option>
+                    <option value="18:00">18:00</option>
+                    <option value="19:00">19:00</option>
+                    <option value="20:00">20:00</option>
+                    <option value="21:00">21:00</option>
+                    <option value="22:00">22:00</option>
+                    <option value="23:00">23:00</option>
+                </select>
+            </td>
+            <td class="px-3 py-3 whitespace-nowrap min-w-[140px]">
+                <select
+                    class="waktu-lembur-out-select w-full min-w-[140px] px-2 py-2 text-sm border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all bg-white text-gray-900"
+                >
+                    <option value=""> </option>
+                    <option value="00:00">00:00</option>
+                    <option value="01:00">01:00</option>
+                    <option value="02:00">02:00</option>
+                    <option value="03:00">03:00</option>
+                    <option value="04:00">04:00</option>
+                    <option value="05:00">05:00</option>
+                    <option value="06:00">06:00</option>
+                    <option value="07:00">07:00</option>
+                    <option value="08:00">08:00</option>
+                    <option value="09:00">09:00</option>
+                    <option value="10:00">10:00</option>
+                    <option value="11:00">11:00</option>
+                    <option value="12:00">12:00</option>
+                    <option value="13:00">13:00</option>
+                    <option value="14:00">14:00</option>
+                    <option value="15:00">15:00</option>
+                    <option value="16:00">16:00</option>
+                    <option value="17:00">17:00</option>
+                    <option value="18:00">18:00</option>
+                    <option value="19:00">19:00</option>
+                    <option value="20:00">20:00</option>
+                    <option value="21:00">21:00</option>
+                    <option value="22:00">22:00</option>
+                    <option value="23:00">23:00</option>
                 </select>
             </td>
             <td class="px-3 py-3 whitespace-nowrap text-center">
@@ -273,7 +351,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Add event listeners to hour inputs in the new row
         const hourInputs = row.querySelectorAll(
-            'input[type="number"][step="1"]'
+            'input[type="number"][step="1"]',
         );
         hourInputs.forEach(function (input) {
             input.addEventListener("input", function (e) {
@@ -288,18 +366,27 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-        // Add event listeners to waktu kerja and waktu lembur selects
+        // Add event listeners to waktu kerja and waktu lembur controls
         const waktuKerjaSelect = row.querySelector(".waktu-kerja-select");
-        const waktuLemburSelect = row.querySelector(".waktu-lembur-select");
+        const waktuLemburInSelect = row.querySelector(
+            ".waktu-lembur-in-select",
+        );
+        const waktuLemburOutSelect = row.querySelector(
+            ".waktu-lembur-out-select",
+        );
         const jumlahJamInput = row.querySelector(".jumlah-jam-input");
+
+        // Attach non-looping behavior to time controls
+        attachNonLoopingTimeControl(waktuLemburInSelect);
+        attachNonLoopingTimeControl(waktuLemburOutSelect);
 
         // Get rate input references
         const rateInputs = {
-            1.125: row.querySelectorAll("td")[4]?.querySelector("input"),
-            1.25: row.querySelectorAll("td")[5]?.querySelector("input"),
-            1.5: row.querySelectorAll("td")[6]?.querySelector("input"),
-            1.75: row.querySelectorAll("td")[7]?.querySelector("input"),
-            "2.0": row.querySelectorAll("td")[8]?.querySelector("input"),
+            1.125: row.querySelectorAll("td")[5]?.querySelector("input"),
+            1.25: row.querySelectorAll("td")[6]?.querySelector("input"),
+            1.5: row.querySelectorAll("td")[7]?.querySelector("input"),
+            1.75: row.querySelectorAll("td")[8]?.querySelector("input"),
+            "2.0": row.querySelectorAll("td")[9]?.querySelector("input"),
         };
 
         // Function to recalculate all rows (for continuous overtime detection)
@@ -311,413 +398,240 @@ document.addEventListener("DOMContentLoaded", function () {
             allRows.forEach((r) => {
                 const dateInput = r.querySelector('input[type="date"]');
                 const waktuKerjaSel = r.querySelector(".waktu-kerja-select");
-                const waktuLemburSel = r.querySelector(".waktu-lembur-select");
+                const waktuLemburIn = r.querySelector(
+                    ".waktu-lembur-in-select",
+                );
+                const waktuLemburOut = r.querySelector(
+                    ".waktu-lembur-out-select",
+                );
                 const jumlahJamIn = r.querySelector(".jumlah-jam-input");
                 const rateInps = {
-                    1.125: r.querySelectorAll("td")[4]?.querySelector("input"),
-                    1.25: r.querySelectorAll("td")[5]?.querySelector("input"),
-                    1.5: r.querySelectorAll("td")[6]?.querySelector("input"),
-                    1.75: r.querySelectorAll("td")[7]?.querySelector("input"),
-                    "2.0": r.querySelectorAll("td")[8]?.querySelector("input"),
+                    1.125: r.querySelectorAll("td")[5]?.querySelector("input"),
+                    1.25: r.querySelectorAll("td")[6]?.querySelector("input"),
+                    1.5: r.querySelectorAll("td")[7]?.querySelector("input"),
+                    1.75: r.querySelectorAll("td")[8]?.querySelector("input"),
+                    "2.0": r.querySelectorAll("td")[9]?.querySelector("input"),
                 };
 
-                if (dateInput && waktuKerjaSel && waktuLemburSel) {
+                if (
+                    dateInput &&
+                    waktuKerjaSel &&
+                    waktuLemburIn &&
+                    waktuLemburOut
+                ) {
                     rowData.push({
                         row: r,
                         date: dateInput.value,
                         waktuKerja: waktuKerjaSel.value,
-                        waktuLembur: waktuLemburSel.value,
+                        waktuLemburIn: waktuLemburIn.value,
+                        waktuLemburOut: waktuLemburOut.value,
                         jumlahJamInput: jumlahJamIn,
                         rateInputs: rateInps,
                     });
                 }
             });
 
-            // Group rows by date
-            const rowsByDate = {};
-            rowData.forEach((data) => {
-                if (data.date && data.waktuKerja && data.waktuLembur) {
-                    if (!rowsByDate[data.date]) {
-                        rowsByDate[data.date] = [];
-                    }
-                    rowsByDate[data.date].push(data);
-                }
-            });
+            // Helper to parse "HH:MM" into minutes from 00:00
+            function parseTimeToMinutes(timeStr) {
+                if (!timeStr) return null;
+                const [h, m] = timeStr.split(":").map((v) => parseInt(v, 10));
+                if (isNaN(h) || isNaN(m)) return null;
+                return h * 60 + m;
+            }
 
-            // Process each row
+            // Determine day/night rates based on waktu kerja
+            function getRatesForShift(shift) {
+                if (shift === "KELEPASAN_GILIRAN") {
+                    return { dayRate: 1.25, nightRate: 1.5 };
+                }
+                if (
+                    shift === "KELEPASAN_AM" ||
+                    shift === "KELEPASAN_AM_GANTIAN"
+                ) {
+                    return { dayRate: 1.75, nightRate: "2.0" };
+                }
+                // Default for normal shifts
+                return { dayRate: 1.125, nightRate: 1.25 };
+            }
+
+            // Check if a given minute (mod 24h) is night
+            function isNightMinute(minute) {
+                const m = ((minute % (24 * 60)) + 24 * 60) % (24 * 60);
+                return m < 6 * 60 || m >= 22 * 60; // 2200 - 0600 night
+            }
+
+            // Clear all rate inputs and jumlah jam first
             rowData.forEach((data) => {
-                // Clear inputs first
                 Object.values(data.rateInputs).forEach((input) => {
                     if (input) input.value = "";
                 });
                 if (data.jumlahJamInput) data.jumlahJamInput.value = "";
+            });
 
-                if (!data.waktuKerja || !data.waktuLembur) {
+            // If no valid rows, nothing to do
+            if (!rowData.length) {
+                calculateTotals();
+                return;
+            }
+
+            // Build a stable index for dates so we can create absolute minutes across days
+            const uniqueDates = Array.from(
+                new Set(
+                    rowData
+                        .map((d) => d.date)
+                        .filter((d) => d && d.length > 0),
+                ),
+            ).sort();
+            const dateIndexMap = {};
+            uniqueDates.forEach((d, idx) => {
+                dateIndexMap[d] = idx;
+            });
+
+            // Build intervals for all rows with absolute minutes
+            const intervals = [];
+            let globalEarliest = Infinity;
+            let globalLatest = -Infinity;
+
+            rowData.forEach((data) => {
+                if (
+                    !data.date ||
+                    !data.waktuKerja ||
+                    !data.waktuLemburIn ||
+                    !data.waktuLemburOut
+                ) {
                     return;
                 }
 
-                // Update jumlah jam
-                const waktuLemburHours = {
-                    "0000-0800": 8,
-                    "0700-1600": 9,
-                    "1500-0000": 9,
-                    "0800-1600": 8,
-                    "1600-0000": 8,
-                    "0000-0700": 7,
-                    "0700-1500": 8,
-                    "0800-1500": 7,
-                };
+                const dayIndex = dateIndexMap[data.date];
+                if (dayIndex == null) return;
+
+                const startLocal = parseTimeToMinutes(data.waktuLemburIn);
+                const endLocal = parseTimeToMinutes(data.waktuLemburOut);
+                if (startLocal == null || endLocal == null) return;
+
+                let startAbs = dayIndex * 24 * 60 + startLocal;
+                let endAbs = dayIndex * 24 * 60 + endLocal;
+
+                // If OT crosses midnight within the same calendar entry
+                if (endAbs <= startAbs) {
+                    endAbs += 24 * 60;
+                }
+
+                // Update jumlah jam (raw hours, before 9th hour deduction)
+                const rawHours = (endAbs - startAbs) / 60;
                 if (data.jumlahJamInput) {
                     data.jumlahJamInput.value =
-                        waktuLemburHours[data.waktuLembur] || "";
+                        Number.isFinite(rawHours) && rawHours > 0
+                            ? rawHours
+                            : "";
                 }
 
-                // Determine rates based on waktu kerja
-                let dayRate, nightRate;
+                intervals.push({
+                    row: data.row,
+                    startAbs,
+                    endAbs,
+                    shift: data.waktuKerja,
+                });
+
+                if (startAbs < globalEarliest) globalEarliest = startAbs;
+                if (endAbs > globalLatest) globalLatest = endAbs;
+            });
+
+            if (
+                !intervals.length ||
+                !Number.isFinite(globalEarliest) ||
+                !Number.isFinite(globalLatest)
+            ) {
+                calculateTotals();
+                return;
+            }
+
+            // Sort intervals by absolute start time
+            intervals.sort((a, b) => a.startAbs - b.startAbs);
+
+            // Track per-row accumulated day/night hours
+            const perRowHours = new Map();
+            rowData.forEach((data) => {
+                perRowHours.set(data.row, { day: 0, night: 0 });
+            });
+
+            // Walk hour by hour across the entire OT window.
+            // 9th-hour deduction is applied every 9th hour (9th, 18th, 27th, ...)
+            // within each continuous OT block across dates.
+            let otHourIndex = 0;
+            let previousHadCoverage = false;
+            const hourStartAbs = Math.floor(globalEarliest / 60) * 60;
+            const hourEndAbs = Math.ceil(globalLatest / 60) * 60;
+
+            for (let t = hourStartAbs; t < hourEndAbs; t += 60) {
+                const tEnd = t + 60;
+
+                // Find intervals that fully cover this hour
+                const covering = intervals.filter(
+                    (iv) => iv.startAbs <= t && iv.endAbs >= tEnd,
+                );
+
+                if (!covering.length) {
+                    // Gap: reset sequence
+                    previousHadCoverage = false;
+                    otHourIndex = 0;
+                    continue;
+                }
+
+                if (!previousHadCoverage) {
+                    otHourIndex = 0;
+                }
+                previousHadCoverage = true;
+
+                otHourIndex += 1;
+                // Skip every 9th hour (auto-deduct)
+                if (otHourIndex % 9 === 0) {
+                    continue;
+                }
+
+                // Assign this hour to the first covering row (prevents double-counting overlaps)
+                const targetInterval = covering[0];
+                const targetRow = targetInterval.row;
+                const counters = perRowHours.get(targetRow);
+                if (!counters) continue;
+
+                // Determine if this hour is day or night based on middle of the hour (wrapped to 24h)
+                const midMinuteAbs = t + 30;
+                const midMinuteLocal =
+                    ((midMinuteAbs % (24 * 60)) + 24 * 60) % (24 * 60);
+                const { dayRate, nightRate } = getRatesForShift(
+                    targetInterval.shift,
+                );
+
+                if (isNightMinute(midMinuteLocal)) {
+                    counters.night += 1;
+                } else {
+                    counters.day += 1;
+                }
+            }
+
+            // Apply accumulated hours to each row's rate inputs
+            rowData.forEach((data) => {
+                const counters = perRowHours.get(data.row);
+                if (!counters) return;
+
+                const { dayRate, nightRate } = getRatesForShift(
+                    data.waktuKerja,
+                );
+
                 if (
-                    data.waktuKerja === "0000-0800" ||
-                    data.waktuKerja === "0700-1600" ||
-                    data.waktuKerja === "1500-0000"
+                    dayRate &&
+                    data.rateInputs[dayRate] &&
+                    counters.day > 0
                 ) {
-                    dayRate = 1.125;
-                    nightRate = 1.25;
-                } else if (data.waktuKerja === "KELEPASAN_GILIRAN") {
-                    dayRate = 1.25;
-                    nightRate = 1.5;
-                } else if (
-                    data.waktuKerja === "KELEPASAN_AM" ||
-                    data.waktuKerja === "KELEPASAN_AM_GANTIAN"
-                ) {
-                    dayRate = 1.75;
-                    nightRate = "2.0";
+                    data.rateInputs[dayRate].value = counters.day;
                 }
-
-                // Calculate hours based on waktu kerja and waktu lembur
-                let dayHours = 0;
-                let nightHours = 0;
-
-                // Case 1: waktu kerja = 0000-0800, waktu lembur = 0800-1600 (standalone)
                 if (
-                    data.waktuKerja === "0000-0800" &&
-                    data.waktuLembur === "0800-1600"
+                    nightRate &&
+                    data.rateInputs[nightRate] &&
+                    counters.night > 0
                 ) {
-                    // Check if this is part of continuous overtime
-                    const dateRows = rowsByDate[data.date] || [];
-                    const has1600_0000 = dateRows.some(
-                        (r) =>
-                            r.waktuKerja === "0000-0800" &&
-                            r.waktuLembur === "1600-0000" &&
-                            r !== data
-                    );
-
-                    if (!has1600_0000) {
-                        // Standalone: full 8 hours day rate
-                        dayHours = 8;
-                        nightHours = 0;
-                    } else {
-                        // Part of continuous: full 8 hours day rate (no 9th hour deduction for first row)
-                        dayHours = 8;
-                        nightHours = 0;
-                    }
-                }
-                // Case 2: waktu kerja = 0000-0800, waktu lembur = 1600-0000
-                else if (
-                    data.waktuKerja === "0000-0800" &&
-                    data.waktuLembur === "1600-0000"
-                ) {
-                    // Check if this is part of continuous overtime
-                    const dateRows = rowsByDate[data.date] || [];
-                    const has0800_1600 = dateRows.some(
-                        (r) =>
-                            r.waktuKerja === "0000-0800" &&
-                            r.waktuLembur === "0800-1600" &&
-                            r !== data
-                    );
-
-                    if (has0800_1600) {
-                        // Continuous overtime: 9th hour is at 1600-1700 (from start at 0800)
-                        // 1600-0000 breakdown: 1600-2200 = 6 day, 2200-0000 = 2 night
-                        // Deduct 9th hour (1600-1700) from day: 6 - 1 = 5 day, 2 night
-                        dayHours = 5;
-                        nightHours = 2;
-                    } else {
-                        // Standalone: 8 hours (6 day + 2 night), no 9th hour deduction
-                        dayHours = 6;
-                        nightHours = 2;
-                    }
-                }
-                // Case 3: waktu kerja = 0000-0800, waktu lembur = 1500-0000 (standalone)
-                else if (
-                    data.waktuKerja === "0000-0800" &&
-                    data.waktuLembur === "1500-0000"
-                ) {
-                    // 9 hours: 7 day (1500-2200) + 2 night (2200-0000)
-                    // 9th hour from start (1500) = 2300-0000 (night shift)
-                    // Deduct 9th hour (1 hour from night): 7 day + 1 night
-                    dayHours = 7;
-                    nightHours = 1;
-                }
-                // Case 4: waktu kerja = 0700-1600, waktu lembur = 0000-0700
-                else if (
-                    data.waktuKerja === "0700-1600" &&
-                    data.waktuLembur === "0000-0700"
-                ) {
-                    // Check if this is part of continuous overtime with 1600-0000
-                    const dateRows = rowsByDate[data.date] || [];
-                    const has1600_0000 = dateRows.some(
-                        (r) =>
-                            r.waktuKerja === "0700-1600" &&
-                            r.waktuLembur === "1600-0000" &&
-                            r !== data
-                    );
-
-                    if (has1600_0000) {
-                        // Continuous overtime: 0000-0700 breakdown
-                        // 0000-0600 = 6 hours night, 0600-0700 = 1 hour day
-                        dayHours = 1;
-                        nightHours = 6;
-                    } else {
-                        // Standalone: 0000-0700 breakdown
-                        // 0000-0600 = 6 hours night (2200-0600 is night shift)
-                        // 0600-0700 = 1 hour day (0600-2200 is day shift)
-                        // No 9th hour deduction (only 7 hours)
-                        dayHours = 1;
-                        nightHours = 6;
-                    }
-                }
-                // Case 5: waktu kerja = 0700-1600, waktu lembur = 1600-0000
-                else if (
-                    data.waktuKerja === "0700-1600" &&
-                    data.waktuLembur === "1600-0000"
-                ) {
-                    // Check if this is part of continuous overtime with 0000-0700
-                    const dateRows = rowsByDate[data.date] || [];
-                    const has0000_0700 = dateRows.some(
-                        (r) =>
-                            r.waktuKerja === "0700-1600" &&
-                            r.waktuLembur === "0000-0700" &&
-                            r !== data
-                    );
-
-                    if (has0000_0700) {
-                        // Continuous overtime: 1600-0000 breakdown
-                        // 1600-2200 = 6 hours day, 2200-0000 = 2 hours night
-                        // No 9th hour deduction
-                        dayHours = 6;
-                        nightHours = 2;
-                    } else {
-                        // Standalone: 6 day (1600-2200) + 2 night (2200-0000), no 9th hour deduction
-                        dayHours = 6;
-                        nightHours = 2;
-                    }
-                }
-                // Case 6: waktu kerja = 1500-0000, waktu lembur = 0000-0800
-                else if (
-                    data.waktuKerja === "1500-0000" &&
-                    data.waktuLembur === "0000-0800"
-                ) {
-                    // Check if this is part of continuous overtime with 0800-1500
-                    const dateRows = rowsByDate[data.date] || [];
-                    const has0800_1500 = dateRows.some(
-                        (r) =>
-                            r.waktuKerja === "1500-0000" &&
-                            r.waktuLembur === "0800-1500" &&
-                            r !== data
-                    );
-
-                    if (has0800_1500) {
-                        // Continuous overtime: 0000-0800 breakdown
-                        // 0000-0600 = 6 hours night, 0600-0800 = 2 hours day
-                        // No 9th hour deduction (9th hour is in the next row)
-                        dayHours = 2;
-                        nightHours = 6;
-                    } else {
-                        // Standalone case: 0000-0800 breakdown
-                        // 0000-0600 = 6 hours night (2200-0600 is night shift)
-                        // 0600-0800 = 2 hours day (0600-2200 is day shift)
-                        // No 9th hour deduction (only 8 hours)
-                        dayHours = 2;
-                        nightHours = 6;
-                    }
-                }
-                // Case 7: waktu kerja = 1500-0000, waktu lembur = 0800-1500
-                else if (
-                    data.waktuKerja === "1500-0000" &&
-                    data.waktuLembur === "0800-1500"
-                ) {
-                    // Check if this is part of continuous overtime with 0000-0800
-                    const dateRows = rowsByDate[data.date] || [];
-                    const has0000_0800 = dateRows.some(
-                        (r) =>
-                            r.waktuKerja === "1500-0000" &&
-                            r.waktuLembur === "0000-0800" &&
-                            r !== data
-                    );
-
-                    if (has0000_0800) {
-                        // Continuous overtime: 0800-1500 breakdown
-                        // Original: 0800-1500 = 7 hours (all day, since 0600-2200 is day)
-                        // 9th hour from start (0000) is at 0800-0900, which falls in this period
-                        // Deduct 9th hour: 7 - 1 = 6 hours day rate
-                        dayHours = 6;
-                        nightHours = 0;
-                    } else {
-                        // Standalone: 0800-1500 = 7 hours (all day)
-                        // No 9th hour deduction (only 7 hours)
-                        dayHours = 7;
-                        nightHours = 0;
-                    }
-                }
-                // Case 7b: waktu kerja = 1500-0000, waktu lembur = 0700-1500 (standalone)
-                else if (
-                    data.waktuKerja === "1500-0000" &&
-                    data.waktuLembur === "0700-1500"
-                ) {
-                    // Pre-deducted version: overlap already deducted
-                    // Claim hours: 0700-1500 = 8 hours
-                    // All 8 hours are day rate (0600-2200 is day shift)
-                    // No 9th hour deduction (only 8 hours)
-                    dayHours = 8;
-                    nightHours = 0;
-                }
-                // Case 8: KELEPASAN cases with basic waktu lembur
-                else if (
-                    (data.waktuKerja === "KELEPASAN_GILIRAN" ||
-                        data.waktuKerja === "KELEPASAN_AM" ||
-                        data.waktuKerja === "KELEPASAN_AM_GANTIAN") &&
-                    (data.waktuLembur === "0000-0800" ||
-                        data.waktuLembur === "0700-1600" ||
-                        data.waktuLembur === "1500-0000")
-                ) {
-                    if (data.waktuLembur === "0000-0800") {
-                        // Check if this is part of continuous overtime with 0800-1600
-                        const dateRows = rowsByDate[data.date] || [];
-                        const has0800_1600 = dateRows.some(
-                            (r) =>
-                                (r.waktuKerja === "KELEPASAN_GILIRAN" ||
-                                    r.waktuKerja === "KELEPASAN_AM" ||
-                                    r.waktuKerja === "KELEPASAN_AM_GANTIAN") &&
-                                r.waktuLembur === "0800-1600" &&
-                                r !== data
-                        );
-
-                        if (has0800_1600) {
-                            // Continuous overtime: 0000-0800 breakdown
-                            // 0000-0600 = 6 hours night, 0600-0800 = 2 hours day
-                            // No 9th hour deduction (9th hour is in the next row)
-                            nightHours = 6;
-                            dayHours = 2;
-                        } else {
-                            // Standalone: 8 hours: 6 night (0000-0600) + 2 day (0600-0800)
-                            nightHours = 6;
-                            dayHours = 2;
-                            // No 9th hour deduction (only 8 hours)
-                        }
-                    } else if (data.waktuLembur === "0700-1600") {
-                        // Check if this is part of continuous overtime with 1600-0000
-                        const dateRows = rowsByDate[data.date] || [];
-                        const has1600_0000 = dateRows.some(
-                            (r) =>
-                                (r.waktuKerja === "KELEPASAN_GILIRAN" ||
-                                    r.waktuKerja === "KELEPASAN_AM" ||
-                                    r.waktuKerja === "KELEPASAN_AM_GANTIAN") &&
-                                r.waktuLembur === "1600-0000" &&
-                                r !== data
-                        );
-
-                        if (has1600_0000) {
-                            // Continuous overtime: 0700-1600 breakdown
-                            // Original: 0700-1600 = 9 hours (all day)
-                            // 9th hour from start (0700) is at 1500-1600, which falls in this period
-                            // Deduct 9th hour: 9 - 1 = 8 hours day rate (0700-1500)
-                            dayHours = 8;
-                            nightHours = 0;
-                        } else {
-                            // Standalone: 9 hours: all day (0700-1600)
-                            dayHours = 9;
-                            nightHours = 0;
-                            // Deduct 9th hour (1 hour from day)
-                            dayHours = 8;
-                        }
-                    } else if (data.waktuLembur === "1500-0000") {
-                        // 9 hours: 7 day (1500-2200) + 2 night (2200-0000)
-                        dayHours = 7;
-                        nightHours = 2;
-                        // Deduct 9th hour (1 hour from night)
-                        nightHours = 1;
-                    }
-                }
-                // Case 9: KELEPASAN cases with waktu lembur = 0800-1600
-                else if (
-                    (data.waktuKerja === "KELEPASAN_GILIRAN" ||
-                        data.waktuKerja === "KELEPASAN_AM" ||
-                        data.waktuKerja === "KELEPASAN_AM_GANTIAN") &&
-                    data.waktuLembur === "0800-1600"
-                ) {
-                    // Check if this is part of continuous overtime with 0000-0800
-                    const dateRows = rowsByDate[data.date] || [];
-                    const has0000_0800 = dateRows.some(
-                        (r) =>
-                            (r.waktuKerja === "KELEPASAN_GILIRAN" ||
-                                r.waktuKerja === "KELEPASAN_AM" ||
-                                r.waktuKerja === "KELEPASAN_AM_GANTIAN") &&
-                            r.waktuLembur === "0000-0800" &&
-                            r !== data
-                    );
-
-                    if (has0000_0800) {
-                        // Continuous overtime: 0800-1600 breakdown
-                        // Original: 0800-1600 = 8 hours (all day, since 0600-2200 is day)
-                        // 9th hour from start (0000) is at 0800-0900, which falls in this period
-                        // Deduct 9th hour: 8 - 1 = 7 hours day rate
-                        dayHours = 7;
-                        nightHours = 0;
-                    } else {
-                        // Standalone: 0800-1600 = 8 hours (all day)
-                        // No 9th hour deduction (only 8 hours)
-                        dayHours = 8;
-                        nightHours = 0;
-                    }
-                }
-                // Case 10: KELEPASAN cases with waktu lembur = 1600-0000
-                else if (
-                    (data.waktuKerja === "KELEPASAN_GILIRAN" ||
-                        data.waktuKerja === "KELEPASAN_AM" ||
-                        data.waktuKerja === "KELEPASAN_AM_GANTIAN") &&
-                    data.waktuLembur === "1600-0000"
-                ) {
-                    // Check if this is part of continuous overtime with 0700-1600
-                    const dateRows = rowsByDate[data.date] || [];
-                    const has0700_1600 = dateRows.some(
-                        (r) =>
-                            (r.waktuKerja === "KELEPASAN_GILIRAN" ||
-                                r.waktuKerja === "KELEPASAN_AM" ||
-                                r.waktuKerja === "KELEPASAN_AM_GANTIAN") &&
-                            r.waktuLembur === "0700-1600" &&
-                            r !== data
-                    );
-
-                    if (has0700_1600) {
-                        // Continuous overtime: 1600-0000 breakdown
-                        // 1600-2200 = 6 hours day, 2200-0000 = 2 hours night
-                        // No 9th hour deduction (9th hour was already deducted from first row)
-                        dayHours = 6;
-                        nightHours = 2;
-                    } else {
-                        // Standalone: 1600-0000 = 8 hours
-                        // 1600-2200 = 6 hours day, 2200-0000 = 2 hours night
-                        // No 9th hour deduction (only 8 hours)
-                        dayHours = 6;
-                        nightHours = 2;
-                    }
-                }
-
-                // Fill in the rate inputs
-                if (dayRate && data.rateInputs[dayRate] && dayHours > 0) {
-                    data.rateInputs[dayRate].value = dayHours;
-                }
-                if (nightRate && data.rateInputs[nightRate] && nightHours > 0) {
-                    data.rateInputs[nightRate].value = nightHours;
+                    data.rateInputs[nightRate].value = counters.night;
                 }
             });
 
@@ -733,9 +647,16 @@ document.addEventListener("DOMContentLoaded", function () {
             calculateOvertimeForRow();
         });
 
-        waktuLemburSelect.addEventListener("change", function () {
-            calculateOvertimeForRow();
-        });
+        if (waktuLemburInSelect) {
+            waktuLemburInSelect.addEventListener("change", function () {
+                calculateOvertimeForRow();
+            });
+        }
+        if (waktuLemburOutSelect) {
+            waktuLemburOutSelect.addEventListener("change", function () {
+                calculateOvertimeForRow();
+            });
+        }
 
         // Add date change listener
         const dateInput = row.querySelector('input[type="date"]');
@@ -754,7 +675,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 // Clear dropdowns
                 if (waktuKerjaSelect) waktuKerjaSelect.value = "";
-                if (waktuLemburSelect) waktuLemburSelect.value = "";
+                if (waktuLemburInSelect) waktuLemburInSelect.value = "";
+                if (waktuLemburOutSelect) waktuLemburOutSelect.value = "";
 
                 // Clear jumlah jam input
                 if (jumlahJamInput) jumlahJamInput.value = "";
@@ -784,7 +706,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Format hour inputs to only allow whole numbers (for initial rows)
     const hourInputs = document.querySelectorAll(
-        'input[type="number"][step="1"]'
+        'input[type="number"][step="1"]',
     );
     hourInputs.forEach(function (input) {
         input.addEventListener("input", function (e) {
@@ -820,13 +742,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 // Clear dropdowns
                 const waktuKerjaSelect = row.querySelector(
-                    ".waktu-kerja-select"
+                    ".waktu-kerja-select",
                 );
-                const waktuLemburSelect = row.querySelector(
-                    ".waktu-lembur-select"
+                const waktuLemburInSelect = row.querySelector(
+                    ".waktu-lembur-in-select",
+                );
+                const waktuLemburOutSelect = row.querySelector(
+                    ".waktu-lembur-out-select",
                 );
                 if (waktuKerjaSelect) waktuKerjaSelect.value = "";
-                if (waktuLemburSelect) waktuLemburSelect.value = "";
+                if (waktuLemburInSelect) waktuLemburInSelect.value = "";
+                if (waktuLemburOutSelect) waktuLemburOutSelect.value = "";
 
                 // Clear jumlah jam input
                 const jumlahJamInput = row.querySelector(".jumlah-jam-input");
@@ -834,7 +760,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 // Clear all rate inputs
                 const rateInputs = row.querySelectorAll(
-                    'input[type="number"][step="1"]'
+                    'input[type="number"][step="1"]',
                 );
                 rateInputs.forEach(function (input) {
                     if (!input.classList.contains("jumlah-jam-input")) {
